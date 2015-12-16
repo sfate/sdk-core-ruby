@@ -44,8 +44,18 @@ module PayPal::SDK::Core
           https.ca_file = default_ca_file
           https.verify_mode = OpenSSL::SSL::VERIFY_PEER
           begin
+            protocol = https.ssl_version
             https.ssl_version = :TLSv1_2
+            test_uri = URI('https://tlstest.paypal.com')
+            msg = Net::HTTP.get(test_uri)
+            if !(msg.eql? 'PayPal_Connection_OK' )
+              raise
+            end
           rescue => error
+            begin
+              https.ssl_version = protocol
+            rescue => error
+            end
             logger.warn("WARNING: Your system does not support TLSv1.2. Per PCI Security Council mandate (https://github.com/paypal/TLS-update), you MUST update to latest security library.")
           end
           config.ssl_options.each do |key, value|
